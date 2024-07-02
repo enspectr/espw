@@ -1,0 +1,51 @@
+body {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: #212529;
+	color: #aaa;
+	font-family: sans-serif;
+}
+
+.alert-page {
+	font-size: 150%;
+	margin: 1em;
+	text-align: center;	
+}
+
+.clickable {
+	cursor: pointer;
+	color: white;
+}
+
+table {
+	width: 94%;
+	max-width: 40em;
+	margin: 3%;
+	font-size: 120%;
+	text-align: center;
+}
+
+td {
+	min-width: 1em;
+}
+
+th {
+	text-align: left;
+}
+
+#show-details {
+	text-align: center;
+	font-size: 100%;
+	color: #888;
+	margin: 10%;
+}
+
+.hidden {
+	display: none;
+	visibility:hidden;
+}
+
+#details td {
+	text-align: right;
+}
