@@ -2,6 +2,20 @@
 
 (() => {
 
+const bgColor = window.getComputedStyle(document.body, null).getPropertyValue('background-color');
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
+let timeWnd = urlParams.get('wnd');
+if (timeWnd < 10)
+	timeWnd = 61;
+
+const plot_color   = 'rgb(128, 128, 128)';
+const signal_color = 'rgb(150, 200, 250)';
+const x_margin     = 16;
+const plot_width   = .85;
+const plot_aspect  = .3;
+
 const bt_connect = document.getElementById('connect');
 const bt_devname = document.getElementById('devname');
 
@@ -12,7 +26,7 @@ const bt_char_id = 0xFFE1;
 let   bt_char    = null;
 let   bt_msg_buf = '';
 
-
+let   plot_active = true;
 
 const crc8_table = [
 	0x00,  0x07,  0x0e,  0x09,  0x1c,  0x1b,  0x12,  0x15,  0x38,  0x3f,  0x36,  0x31,  0x24,  0x23,  0x2a,  0x2d, 
@@ -96,6 +110,67 @@ const monitoring_handlers = {
 	'iV' : mk_handler('inp_mv-val'),
 };
 
+function mk_plot(name, samples, y_min = 0, y_max = null)
+{
+	let width  = (window.innerWidth  - x_margin) * plot_width;
+	let height = width * plot_aspect;
+	let xconf = { grid: false, label: null, domain: [0, timeWnd] };
+	let yconf = { grid: true,  label: null };
+	if (y_max !== null)
+		yconf.domain = [y_min, y_max];
+	return Plot.plot({
+		marks: [
+			Plot.areaY(samples, {
+				x: 't',
+				y1: 'y',
+				y2: y_min,
+				fill: signal_color,
+			}),
+			Plot.text([[0, y_min]], {
+				text: [name],
+				textAnchor: "start", dx: 20, dy: -10
+			}),
+		],
+		x: xconf, y: yconf,
+		width: width,
+		height: height,
+		style: {
+			backgroundColor: bgColor,
+			color: plot_color
+		},
+	});
+}
+
+function mk_plot_handler(id, title, units, vmin = 0, vmax = null)
+{
+	let samples = [];
+	const plot_elem = document.getElementById(id);
+	const val_elem  = document.getElementById(id + '-val');
+	return (val) => {
+		// Update samples
+		const v = val / 1000;
+		const now = Date.now() / 1000;
+		const keep = now - timeWnd;
+		while (samples.length && samples[samples.length-1].ts < keep)
+			samples.pop()
+		for (let i = 0; i < samples.length; ++i)
+			samples[i].t = now - samples[i].ts;
+		samples.unshift({ts: now, t: 0, y: v});
+		// Update plot
+		const plot = mk_plot(title, samples, vmin, vmax);
+		const currPlot = plot_elem.firstChild;
+		if (currPlot === null)
+			plot_elem.appendChild(plot);
+		else
+			plot_elem.replaceChild(plot, currPlot);
+		val_elem.textContent = v.toFixed(v >= 10 ? 2 : 3) + units;
+	}
+}
+
+const plot_handlers = {
+	'iV' : mk_plot_handler('inp_plot', 'Input', 'V')
+};
+
 function initPage()
 {
 	if (!navigator.bluetooth) {
@@ -105,13 +180,16 @@ function initPage()
 	setClickable(bt_connect, 'connect', onConnect);
 }
 
-function handleMessage(msg, handlers)
+function handleMessage(msg)
 {
 	for (const tag of msg.split(',')) {
 		const kv = tag.split(':');
-		let base = kv[0].length <= 1 ? 16 : 10;
-		if (kv[0] in handlers)
-			handlers[kv[0]](parseInt(kv[1], base));
+		const base = kv[0].length <= 1 ? 16 : 10;
+		const val = parseInt(kv[1], base);
+		if (kv[0] in monitoring_handlers)
+			monitoring_handlers[kv[0]](val);
+		if (plot_active && kv[0] in plot_handlers)
+			plot_handlers[kv[0]](val);
 	}
 }
 
@@ -124,7 +202,7 @@ function onMessage(msg)
 		return;
 	}
 
-	handleMessage(msg.slice(3, -5), monitoring_handlers);
+	handleMessage(msg.slice(3, -5));
 }
 
 function onValueChanged(event)

@@ -7,11 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="EnSpectr power monitor">
     <link href="css/main.css" rel="stylesheet">
+    <script src="js/d3.min.js"></script>
+    <script src="js/plot.min.js"></script>
   </head>
 <body>
 
 <table id="params">
 <tr><th id="connect"></th><td id="devname"></td></tr>
+<tr><td colspan="2"><hr></td></tr>
 <tr><th id="model">model</th><td id="model-val"></td></tr>
 <tr><th id="build_date">build date</th><td id="build_date-val"></td></tr>
 <tr><th id="config">config</th><td id="config-val"></td></tr>
@@ -24,6 +27,10 @@
 <tr><th id="outp_mv">output voltage mV</th><td id="outp_mv-val"></td></tr>
 <tr><th id="outp_ma">output current mA</th><td id="outp_ma-val"></td></tr>
 <tr><th id="errors">errors</th><td id="errors-val"></td></tr>
+</table>
+<table id="plots">
+<tr><td colspan="2"><hr></td></tr>
+<tr><th class="value" id="inp_plot-val"></th><td class="plot" id="inp_plot"></td></tr>
 </table>
 <script src="js/main.js"></script>
 </body>

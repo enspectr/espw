@@ -34,7 +34,7 @@ th {
 	text-align: left;
 }
 
-#show-details {
+#show-plots {
 	text-align: center;
 	font-size: 100%;
 	color: #888;
@@ -46,6 +46,18 @@ th {
 	visibility:hidden;
 }
 
-#details td {
+#params td {
 	text-align: right;
+}
+
+td.plot {
+	width: 85%;
+}
+
+td.value {
+	width: 15%;
+	color: #aaa;
+	padding-left: 10px;
+	font-size: 1.2pc;
+	font-family: sans-serif;
 }
