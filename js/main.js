@@ -141,11 +141,32 @@ function mk_plot(name, samples, y_min = 0, y_max = null)
 	});
 }
 
+function mk_data_to_download(samples)
+{
+	let lines = [];
+	for (let i = samples.length-1; i >= 0; --i)
+		lines.push(samples[i].ts + ' ' + samples[i].y);
+	return lines.join('\n');
+}
+
+function plot_save_handler(id, samples)
+{
+	return (event) => {
+		var a = document.createElement('a');
+		var blob = new Blob([mk_data_to_download(samples)], {'type': 'text/csv'});
+		a.href = window.URL.createObjectURL(blob);
+		a.download = id + '.data';
+		a.click();
+	}
+}
+
 function mk_plot_handler(id, title, units, vmin = 0, vmax = null)
 {
 	let samples = [];
 	const plot_elem = document.getElementById(id);
 	const val_elem  = document.getElementById(id + '-val');
+	val_elem.onclick = plot_save_handler(id, samples);
+	val_elem.classList.add('clickable');
 	return (val) => {
 		// Update samples
 		const v = val / 1000;
