@@ -20,13 +20,40 @@ const bt_connect = document.getElementById('connect');
 const bt_devname = document.getElementById('devname');
 
 const build_val = document.getElementById('build_date-val');
+const config_val = document.getElementById('config-val');
+const errors_val = document.getElementById('errors-val');
+
+const show_plots = document.getElementById('show-plots');
+
+const nCellsCfg    = ['2', '3', '4', '5 cells'];
+const currLimitCfg = ['4A', '5A', '6A', '9A'];
+const maxInpCfg    = ['18V', '25.5V'];
+const outVoltCfg   = ['5V', '7.5V'];
+
+const errNames = {
+	0: 'none',
+	1: 'vcc',
+	2: 'temp',
+	3: 'batt V',
+	4: 'inp V',
+	5: 'out V',
+	6: 'out I',
+	7: 'load failure',  
+	8: 'dcdc V',
+};
+
+const e_high = 0x40;
+const e_aged = 0x80;
+const e_source_ = 0xff ^ (e_high|e_aged);
+
+let   last_error = 0;
 
 const bt_svc_id  = 0xFFE0;
 const bt_char_id = 0xFFE1;
 let   bt_char    = null;
 let   bt_msg_buf = '';
 
-let   plot_active = true;
+let   plot_active = false;
 
 const crc8_table = [
 	0x00,  0x07,  0x0e,  0x09,  0x1c,  0x1b,  0x12,  0x15,  0x38,  0x3f,  0x36,  0x31,  0x24,  0x23,  0x2a,  0x2d, 
@@ -96,7 +123,7 @@ function build_info(val)
 	const year  = 2024 + val/512|0;
 	const month = (val%512)/32|0;
 	const day   = val%32|0;
-	return month_names[month] + day + ' ' + year;
+	return month_names[month] + ' ' + day + ', ' + year;
 }
 
 function mk_handler(id)
@@ -105,16 +132,73 @@ function mk_handler(id)
 	return (val) => { elem.textContent = val; }
 }
 
+function mark_failed(err_code)
+{
+	// TBD: set alerting class on elements selected based on err_code
+}
+
+function unmark_failed(err_code)
+{
+	// TBD: set alerting class on elements selected based on err_code
+}
+
+function last_error_handler(val)
+{
+	if (last_error == val)
+		return;
+
+	errors_val.textContent = errors_info(val);
+	if (!(last_error & e_aged)) {
+		unmark_failed(last_error & e_source_);
+	}
+	if (val & e_aged) {
+		errors_val.classList.remove('alert');
+	} else {
+		errors_val.classList.add('alert');
+		mark_failed(val & e_source_);
+	}
+	last_error = val;
+}
+
 const monitoring_handlers = {
-	'D' : (val) => { build_val.textContent = build_info(val); },
-	'iV' : mk_handler('inp_mv-val'),
+	'M': mk_handler('model-val'),
+	'D': (val) => { build_val.textContent = build_info(val); },
+	'C': (val) => { config_val.textContent = parseConfig(val); },
+	'iV': mk_handler('inp_mv-val'),
+	'dV': mk_handler('dcdc_mv-val'),
+	'mV': mk_handler('vcc_mv-val'),
+	'mT': mk_handler('mcu_temp-val'),
+	'bV': mk_handler('batt_mv-val'),
+	'bc': mk_handler('batt_chrg-val'),
+	'oV': mk_handler('outp_mv-val'),
+	'oI': mk_handler('outp_ma-val'),
+	'e': last_error_handler,
 };
+
+function parseConfig(val) {
+	const mode1 = (val >> 6) & 3;
+	const mode2 = (val >> 4) & 3;
+	const config1 = (val >> 2) & 1;
+	const config2 = val & 1;
+	return (2 + mode1) + ' cells ' +  maxInpCfg[config1] + ' | ' + outVoltCfg[config2] + ' ' + currLimitCfg[mode2];
+}
+
+function errors_info(val) {
+	const error_code = val & e_source_; // Extracting the lower 6 bits
+	let errorDescription = errNames[error_code] || 'unknown';
+	if (val & e_high) {
+		errorDescription += val & e_aged ? ' was high' : ' is high';
+	} else if (val) {
+		errorDescription += val & e_aged ? ' was low' : ' is low';
+	}
+	return errorDescription;
+}
 
 function mk_plot(name, samples, y_min = 0, y_max = null)
 {
 	let width  = (window.innerWidth  - x_margin) * plot_width;
 	let height = width * plot_aspect;
-	let xconf = { grid: false, label: null, domain: [0, timeWnd] };
+	let xconf = { grid: false, label: null, domain: [timeWnd, 0] };
 	let yconf = { grid: true,  label: null };
 	if (y_max !== null)
 		yconf.domain = [y_min, y_max];
@@ -126,7 +210,7 @@ function mk_plot(name, samples, y_min = 0, y_max = null)
 				y2: y_min,
 				fill: signal_color,
 			}),
-			Plot.text([[0, y_min]], {
+			Plot.text([[timeWnd, y_min]], {
 				text: [name],
 				textAnchor: "start", dx: 20, dy: -10
 			}),
@@ -160,8 +244,7 @@ function plot_save_handler(id, samples)
 	}
 }
 
-function mk_plot_handler(id, title, units, vmin = 0, vmax = null)
-{
+function mk_plot_handler(id, title, units, unit_weight = 1, precision = null, vmin = 0, vmax = null) {
 	let samples = [];
 	const plot_elem = document.getElementById(id);
 	const val_elem  = document.getElementById(id + '-val');
@@ -169,11 +252,11 @@ function mk_plot_handler(id, title, units, vmin = 0, vmax = null)
 	val_elem.classList.add('clickable');
 	return (val) => {
 		// Update samples
-		const v = val / 1000;
+		const v = val / unit_weight;
 		const now = Date.now() / 1000;
 		const keep = now - timeWnd;
 		while (samples.length && samples[samples.length-1].ts < keep)
-			samples.pop()
+			samples.pop();
 		for (let i = 0; i < samples.length; ++i)
 			samples[i].t = now - samples[i].ts;
 		samples.unshift({ts: now, t: 0, y: v});
@@ -184,13 +267,23 @@ function mk_plot_handler(id, title, units, vmin = 0, vmax = null)
 			plot_elem.appendChild(plot);
 		else
 			plot_elem.replaceChild(plot, currPlot);
-		val_elem.textContent = v.toFixed(v >= 10 ? 2 : 3) + units;
-	}
+		if (precision === null)
+			precision = v >= 10 ? 2 : 3;
+		val_elem.textContent = v.toFixed(precision) + units;
+	};
 }
 
 const plot_handlers = {
-	'iV' : mk_plot_handler('inp_plot', 'Input', 'V')
+	'iV' : mk_plot_handler('inp_plot', 'Input Voltage', 'V', 1e3),
+	'dV' : mk_plot_handler('dcdc_plot', 'DCDC Voltage', 'V', 1e3, null, 4.5, 5.5),
+	'mV' : mk_plot_handler('vcc_plot', 'VCC Voltage', 'V', 1e3, null, 3.1, 3.5),
+	'mT' : mk_plot_handler('mcu_temp_plot', 'MCU Temperature', '°C', 1, 0),
+	'bV' : mk_plot_handler('batt_mv_plot', 'Battery Voltage', 'V', 1e3),
+	'bc' : mk_plot_handler('batt_chrg_plot', 'Battery Charge', '%', 1, 0),
+	'oV' : mk_plot_handler('outp_mv_plot', 'Output Voltage', 'V', 1e3),
+	'oI' : mk_plot_handler('outp_ma_plot', 'Output Current', 'A', 1e3),
 };
+
 
 function initPage()
 {
@@ -199,6 +292,15 @@ function initPage()
 		return;
 	}
 	setClickable(bt_connect, 'connect', onConnect);
+	setClickable(show_plots, 'show data plots', showGraphs);
+}
+
+function showGraphs(event)
+{
+	plot_active = true;
+	show_plots.onclick = null;
+	show_plots.classList.add('hidden');
+	document.getElementById('plots').classList.remove('hidden');
 }
 
 function handleMessage(msg)

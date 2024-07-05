@@ -36,13 +36,16 @@ th {
 #show-plots {
 	text-align: center;
 	font-size: 100%;
-	color: #888;
 	margin: 10%;
 }
 
 .hidden {
 	display: none;
 	visibility:hidden;
+}
+
+.alert {
+	color: red;
 }
 
 #params td {
