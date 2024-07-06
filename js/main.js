@@ -42,13 +42,15 @@ const errNames = {
 	4: 'inp V',
 	5: 'out V',
 	6: 'out I',
-	7: 'load failure',  
+	7: 'out failure',
 	8: 'dcdc V',
 };
 
 const e_high = 0x40;
 const e_aged = 0x80;
 const e_source_ = 0xff ^ (e_high|e_aged);
+// Errors without low / high cases
+const e_flags = [7];
 
 let   last_error = 0;
 
@@ -192,7 +194,7 @@ function errors_info(val) {
 		errorDescription = '#' + error_code;
 	if (val & e_high) {
 		errorDescription += val & e_aged ? ' was high' : ' is high';
-	} else if (val) {
+	} else if (val && !e_flags.includes(val)) {
 		errorDescription += val & e_aged ? ' was low' : ' is low';
 	}
 	return errorDescription;
