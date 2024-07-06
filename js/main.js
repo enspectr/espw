@@ -176,6 +176,7 @@ const monitoring_handlers = {
 	'bc': mk_handler('batt_chrg-val'),
 	'oV': mk_handler('outp_mv-val'),
 	'oI': mk_handler('outp_ma-val'),
+	'sd': mk_handler('sdet_snr-val'),
 	'e': last_error_handler,
 };
 
@@ -286,6 +287,7 @@ const plot_handlers = {
 	'bc' : mk_plot_handler('batt_chrg_plot', 'Battery Charge', '%', 1, 0),
 	'oV' : mk_plot_handler('outp_mv_plot', 'Output Voltage', 'V', 1e3),
 	'oI' : mk_plot_handler('outp_ma_plot', 'Output Current', 'A', 1e3),
+	'sd' : mk_plot_handler('sdet_snr_plot', 'Sample detector SNR', '', 1, 0),
 };
 
 function set_plot_style(plot_line)
