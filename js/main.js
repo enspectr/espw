@@ -54,6 +54,16 @@ const e_flags = [7];
 
 let   last_error = 0;
 
+const errMarkElements = {
+	1: [document.getElementById('vcc_mv-val'),   document.getElementById('vcc_plot-val')],
+	2: [document.getElementById('mcu_temp-val'), document.getElementById('mcu_temp_plot-val')],
+	3: [document.getElementById('batt_mv-val'),  document.getElementById('batt_mv_plot-val')],
+	4: [document.getElementById('inp_mv-val'),   document.getElementById('inp_plot-val')],
+	5: [document.getElementById('outp_mv-val'),  document.getElementById('outp_mv_plot-val')],
+	6: [document.getElementById('outp_ma-val'),  document.getElementById('outp_ma_plot-val')],
+	8: [document.getElementById('dcdc_mv-val'),  document.getElementById('dcdc_plot-val')],
+};
+
 const bt_svc_id  = 0xFFE0;
 const bt_char_id = 0xFFE1;
 let   bt_char    = null;
@@ -136,14 +146,13 @@ function mk_handler(id)
 	return (val) => { elem.textContent = val; }
 }
 
-function mark_failed(err_code)
-{
-	// TBD: set alerting class on elements selected based on err_code
-}
 
-function unmark_failed(err_code)
+function mark_on_error(err_code, failed)
 {
-	// TBD: set alerting class on elements selected based on err_code
+	const elems = errMarkElements[err_code];
+	if (elems === undefined)
+		return;
+	elems.forEach(element => {if (failed) element.classList.add('alert'); else element.classList.remove('alert');});
 }
 
 function last_error_handler(val)
@@ -153,13 +162,13 @@ function last_error_handler(val)
 
 	errors_val.textContent = errors_info(val);
 	if (last_error && !(last_error & e_aged)) {
-		unmark_failed(last_error & e_source_);
+		mark_on_error(val & e_source_, false);
 	}
 	if (val & e_aged) {
 		errors_val.classList.remove('alert');
 	} else if (val) {
 		errors_val.classList.add('alert');
-		mark_failed(val & e_source_);
+		mark_on_error(val & e_source_, true);
 	}
 	last_error = val;
 }
