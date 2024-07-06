@@ -31,7 +31,7 @@ const maxInpCfg    = ['18V', '25.5V'];
 const outVoltCfg   = ['5V', '7.5V'];
 
 const errNames = {
-	0: 'none',
+	0: '',
 	1: 'vcc',
 	2: 'temp',
 	3: 'batt V',
@@ -148,12 +148,12 @@ function last_error_handler(val)
 		return;
 
 	errors_val.textContent = errors_info(val);
-	if (!(last_error & e_aged)) {
+	if (last_error && !(last_error & e_aged)) {
 		unmark_failed(last_error & e_source_);
 	}
 	if (val & e_aged) {
 		errors_val.classList.remove('alert');
-	} else {
+	} else if (val) {
 		errors_val.classList.add('alert');
 		mark_failed(val & e_source_);
 	}
@@ -185,7 +185,9 @@ function parseConfig(val) {
 
 function errors_info(val) {
 	const error_code = val & e_source_; // Extracting the lower 6 bits
-	let errorDescription = errNames[error_code] || 'unknown';
+	let errorDescription = errNames[error_code];
+	if (errorDescription === undefined)
+		errorDescription = '#' + error_code;
 	if (val & e_high) {
 		errorDescription += val & e_aged ? ' was high' : ' is high';
 	} else if (val) {
