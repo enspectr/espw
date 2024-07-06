@@ -63,3 +63,7 @@ td.value {
 	font-size: 1.2pc;
 	font-family: sans-serif;
 }
+
+table#plot-controls td {
+	width: 33%;
+}

@@ -3,6 +3,7 @@
 (() => {
 
 const bgColor = window.getComputedStyle(document.body, null).getPropertyValue('background-color');
+const fgColor = window.getComputedStyle(document.body, null).getPropertyValue('color');
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const minWnd = 10;
@@ -10,8 +11,8 @@ let timeWnd = urlParams.get('wnd');
 if (timeWnd < minWnd)
 	timeWnd = 61;
 
-const plot_color   = 'rgb(128, 128, 128)';
-const signal_color = 'rgb(150, 200, 250)';
+const plot_color   = fgColor;
+const fill_color   = fgColor;
 const x_margin     = 16;
 const plot_width   = .85;
 const plot_aspect  = .3;
@@ -24,6 +25,9 @@ const config_val = document.getElementById('config-val');
 const errors_val = document.getElementById('errors-val');
 
 const show_plots = document.getElementById('show-plots');
+const plot_style = document.getElementById('plot-style');
+let   line_plot  = false;
+let   plot_active = false;
 
 const nCellsCfg    = ['2', '3', '4', '5 cells'];
 const currLimitCfg = ['4A', '5A', '6A', '9A'];
@@ -52,8 +56,6 @@ const bt_svc_id  = 0xFFE0;
 const bt_char_id = 0xFFE1;
 let   bt_char    = null;
 let   bt_msg_buf = '';
-
-let   plot_active = false;
 
 const crc8_table = [
 	0x00,  0x07,  0x0e,  0x09,  0x1c,  0x1b,  0x12,  0x15,  0x38,  0x3f,  0x36,  0x31,  0x24,  0x23,  0x2a,  0x2d, 
@@ -202,20 +204,18 @@ function mk_plot(name, samples, y_min = 0, y_max = null)
 	let height = width * plot_aspect;
 	let xconf = { grid: false, label: null, domain: [timeWnd, 0] };
 	let yconf = { grid: true,  label: null };
-	if (y_max !== null)
+	if (y_max !== null && !line_plot)
 		yconf.domain = [y_min, y_max];
 	return Plot.plot({
 		marks: [
-			Plot.areaY(samples, {
+			line_plot ? Plot.lineY(samples, {x: 't', y: 'y'})
+			: Plot.areaY(samples, {
 				x: 't',
 				y1: 'y',
 				y2: y_min,
-				fill: signal_color,
+				fill: fill_color,
 			}),
-			Plot.text([[timeWnd, y_min]], {
-				text: [name],
-				textAnchor: "start", dx: 20, dy: -10
-			}),
+			Plot.text([name], {frameAnchor: "bottom-left", dx: 20, dy: -10, fill: "white"}),
 		],
 		x: xconf, y: yconf,
 		width: width,
@@ -286,6 +286,11 @@ const plot_handlers = {
 	'oI' : mk_plot_handler('outp_ma_plot', 'Output Current', 'A', 1e3),
 };
 
+function set_plot_style(plot_line)
+{
+	line_plot = plot_line;
+	setClickable(plot_style, plot_line ? 'fill plot' : 'line plot', (event) => {set_plot_style(!line_plot);});
+}
 
 function initPage()
 {
@@ -297,6 +302,7 @@ function initPage()
 	setClickable(show_plots, 'show data plots', showGraphs);
 	setClickable(document.getElementById('more-data'), 'more data', (event) => {timeWnd *= 2;});
 	setClickable(document.getElementById('less-data'), 'less data', (event) => {if (timeWnd > minWnd * 2) timeWnd /= 2;});
+	set_plot_style(false);
 }
 
 function showGraphs(event)
