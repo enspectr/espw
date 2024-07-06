@@ -18,11 +18,34 @@ body {
 	color: white;
 }
 
+.center {
+	margin-left: auto;
+	margin-right: auto;
+}
+
 table {
 	width: 94%;
 	margin: 3%;
 	font-size: 120%;
 	text-align: center;
+	border-collapse: collapse;
+}
+
+#devname {
+	text-align: right;
+}
+
+table#params, table#device
+{
+	max-width: 1000px;
+}
+
+table#params tr
+{
+	border-top: thin solid;
+	border-bottom: thin solid;
+	border-top-color: #888;
+	border-bottom-color: #888;
 }
 
 td {
