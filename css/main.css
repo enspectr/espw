@@ -33,7 +33,7 @@ th {
 	text-align: left;
 }
 
-#show-plots {
+.control {
 	text-align: center;
 	font-size: 100%;
 	margin: 10%;

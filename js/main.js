@@ -5,9 +5,9 @@
 const bgColor = window.getComputedStyle(document.body, null).getPropertyValue('background-color');
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-
+const minWnd = 10;
 let timeWnd = urlParams.get('wnd');
-if (timeWnd < 10)
+if (timeWnd < minWnd)
 	timeWnd = 61;
 
 const plot_color   = 'rgb(128, 128, 128)';
@@ -293,6 +293,8 @@ function initPage()
 	}
 	setClickable(bt_connect, 'connect', onConnect);
 	setClickable(show_plots, 'show data plots', showGraphs);
+	setClickable(document.getElementById('more-data'), 'more data', (event) => {timeWnd *= 2;});
+	setClickable(document.getElementById('less-data'), 'less data', (event) => {if (timeWnd > minWnd * 2) timeWnd /= 2;});
 }
 
 function showGraphs(event)
