@@ -13,9 +13,7 @@ if (timeWnd < minWnd)
 
 const plot_color   = fgColor;
 const fill_color   = fgColor;
-const x_margin     = 16;
-const plot_width   = .85;
-const plot_aspect  = .3;
+const plot_aspect  = .27;
 
 const bt_connect = document.getElementById('connect');
 const bt_devname = document.getElementById('devname');
@@ -210,10 +208,10 @@ function errors_info(val) {
 	return errorDescription;
 }
 
-function mk_plot(name, samples, y_min = 0, y_max = null)
+function mk_plot(elem, name, samples, y_min = 0, y_max = null)
 {
-	let width  = (window.innerWidth  - x_margin) * plot_width;
-	let height = width * plot_aspect;
+	const width  = elem.clientWidth;
+	const height = width * plot_aspect;
 	let xconf = { grid: false, label: null, domain: [timeWnd, 0] };
 	let yconf = { grid: true,  label: null };
 	if (y_max !== null && !line_plot)
@@ -275,7 +273,7 @@ function mk_plot_handler(id, title, units, unit_weight = 1, precision = null, vm
 			samples[i].t = now - samples[i].ts;
 		samples.unshift({ts: now, t: 0, y: v});
 		// Update plot
-		const plot = mk_plot(title, samples, vmin, vmax);
+		const plot = mk_plot(plot_elem, title, samples, vmin, vmax);
 		const currPlot = plot_elem.firstChild;
 		if (currPlot === null)
 			plot_elem.appendChild(plot);

@@ -29,6 +29,7 @@ table {
 	font-size: 120%;
 	text-align: center;
 	border-collapse: collapse;
+	margin: 2%;
 }
 
 #devname {
@@ -75,16 +76,32 @@ th {
 	text-align: right;
 }
 
-td.plot {
-	width: 85%;
+.grid-container {
+	display: grid;
+	grid-template-columns: 3% 30% 3% 30% 3% 30%;
 }
 
-td.value {
-	width: 15%;
+@media (max-width: 1800px) {
+	.grid-container {
+		grid-template-columns: 7% 43% 7% 43%;
+	}
+}
+
+@media (max-width: 1000px) {
+	.grid-container {
+		grid-template-columns: 15% 85%;
+	}
+}
+
+.plot {
+}
+
+.value {
 	color: #aaa;
 	padding-left: 10px;
 	font-size: 1.2pc;
 	font-family: sans-serif;
+	margin: auto;
 }
 
 table#plot-controls td {
