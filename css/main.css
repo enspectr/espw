@@ -13,11 +13,6 @@ body {
 	text-align: center;	
 }
 
-.clickable {
-	cursor: pointer;
-	color: white;
-}
-
 .center {
 	margin-left: auto;
 	margin-right: auto;
@@ -102,6 +97,11 @@ th {
 	font-size: 1.2pc;
 	font-family: sans-serif;
 	margin: auto;
+}
+
+.clickable {
+	cursor: pointer;
+	color: white;
 }
 
 table#plot-controls td {
