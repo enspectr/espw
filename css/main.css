@@ -63,10 +63,6 @@ th {
 	visibility:hidden;
 }
 
-.alert {
-	color: red;
-}
-
 #params td {
 	text-align: right;
 }
@@ -102,6 +98,10 @@ th {
 .clickable {
 	cursor: pointer;
 	color: white;
+}
+
+.alert {
+	color: red;
 }
 
 table#plot-controls td {
